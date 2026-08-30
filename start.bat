@@ -10,44 +10,82 @@ echo =========================================
 
 set "PY_CMD="
 
-:: Test 1: Python Launcher (py.exe)
+:: -------------------------------------------------------------
+:: 1. Check if a working Python is already available
+:: -------------------------------------------------------------
 py -0 >nul 2>&1
 if %ERRORLEVEL% equ 0 (
     set "PY_CMD=py"
-    goto :VALIDATE_PYTHON
+    goto :PYTHON_READY
 )
 
-:: Test 2: python.exe (Ensuring it's not the Windows Store stub)
 python --version >nul 2>&1
 if %ERRORLEVEL% equ 0 (
     set "PY_CMD=python"
-    goto :VALIDATE_PYTHON
+    goto :PYTHON_READY
 )
 
-:: Test 3: Common default install directories if PATH was not set
 for /d %%D in ("%LOCALAPPDATA%\Programs\Python\Python*") do (
     if exist "%%D\python.exe" (
         set "PY_CMD=%%D\python.exe"
-        goto :VALIDATE_PYTHON
+        goto :PYTHON_READY
     )
 )
 
-echo.
-echo [-] Error: A working Python installation was not found!
-echo     Please download and install Python from:
-echo     https://www.python.org/downloads/
-echo.
-echo [*] IMPORTANT: Check the box "Add python.exe to PATH" during installation.
-echo.
+:: -------------------------------------------------------------
+:: 2. Auto-Install Python (if not found)
+:: -------------------------------------------------------------
+echo [!] Python was not detected on this system.
+echo [*] Downloading Python installer automatically...
+
+set "INSTALLER_URL=https://www.python.org/ftp/python/3.12.4/python-3.12.4-amd64.exe"
+set "INSTALLER_PATH=%TEMP%\python_installer.exe"
+
+:: Download using curl with --ssl-no-revoke
+curl --ssl-no-revoke -L -o "%INSTALLER_PATH%" "%INSTALLER_URL%"
+if not exist "%INSTALLER_PATH%" (
+    echo [-] Failed to download Python. Please check your internet connection.
+    pause
+    exit /b 1
+)
+
+echo [*] Installing Python silently (this may take ~1 minute)...
+start /wait "" "%INSTALLER_PATH%" /quiet InstallAllUsers=0 PrependPath=1 Include_pip=1 Include_launcher=1
+del "%INSTALLER_PATH%" >nul 2>&1
+
+:: Refresh search for newly installed Python
+for /d %%D in ("%LOCALAPPDATA%\Programs\Python\Python*") do (
+    if exist "%%D\python.exe" (
+        set "PY_CMD=%%D\python.exe"
+        goto :PYTHON_READY
+    )
+)
+
+py -0 >nul 2>&1
+if %ERRORLEVEL% equ 0 (
+    set "PY_CMD=py"
+    goto :PYTHON_READY
+)
+
+python --version >nul 2>&1
+if %ERRORLEVEL% equ 0 (
+    set "PY_CMD=python"
+    goto :PYTHON_READY
+)
+
+echo [-] Installation completed, but could not find the executable path automatically.
+echo     Please restart your Command Prompt or restart your PC.
 pause
 exit /b 1
 
-:VALIDATE_PYTHON
+:: -------------------------------------------------------------
+:: 3. Setup Virtual Environment & Dependencies
+:: -------------------------------------------------------------
+:PYTHON_READY
 echo [+] Python detected:
 %PY_CMD% --version
 echo.
 
-:: 2. Create virtual environment if it does not exist
 if not exist ".venv\" (
     echo [*] Creating virtual environment (.venv)...
     %PY_CMD% -m venv .venv
@@ -58,7 +96,6 @@ if not exist ".venv\" (
     )
 )
 
-:: 3. Identify and use virtualenv python binary directly
 set "VENV_PYTHON=.venv\Scripts\python.exe"
 if not exist "%VENV_PYTHON%" (
     echo [-] Virtual environment interpreter not found in %VENV_PYTHON%
@@ -66,12 +103,13 @@ if not exist "%VENV_PYTHON%" (
     exit /b 1
 )
 
-:: 4. Install / Update dependencies
 echo [*] Checking and installing dependencies (PyQt6, requests)...
 "%VENV_PYTHON%" -m pip install --upgrade pip --quiet
 "%VENV_PYTHON%" -m pip install PyQt6 requests --quiet
 
-:: 5. Identify Python script to run
+:: -------------------------------------------------------------
+:: 4. Launch the App
+:: -------------------------------------------------------------
 set "TARGET_SCRIPT=main.py"
 if not exist "%TARGET_SCRIPT%" (
     for %%F in (*.py) do (
