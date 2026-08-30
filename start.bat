@@ -41,7 +41,6 @@ echo [*] Downloading Python installer automatically...
 set "INSTALLER_URL=https://www.python.org/ftp/python/3.12.4/python-3.12.4-amd64.exe"
 set "INSTALLER_PATH=%TEMP%\python_installer.exe"
 
-:: Download using curl with --ssl-no-revoke
 curl --ssl-no-revoke -L -o "%INSTALLER_PATH%" "%INSTALLER_URL%"
 if not exist "%INSTALLER_PATH%" (
     echo [-] Failed to download Python. Please check your internet connection.
@@ -49,11 +48,10 @@ if not exist "%INSTALLER_PATH%" (
     exit /b 1
 )
 
-echo [*] Installing Python silently (this may take ~1 minute)...
+echo [*] Installing Python silently...
 start /wait "" "%INSTALLER_PATH%" /quiet InstallAllUsers=0 PrependPath=1 Include_pip=1 Include_launcher=1
 del "%INSTALLER_PATH%" >nul 2>&1
 
-:: Refresh search for newly installed Python
 for /d %%D in ("%LOCALAPPDATA%\Programs\Python\Python*") do (
     if exist "%%D\python.exe" (
         set "PY_CMD=%%D\python.exe"
@@ -74,7 +72,6 @@ if %ERRORLEVEL% equ 0 (
 )
 
 echo [-] Installation completed, but could not find the executable path automatically.
-echo     Please restart your Command Prompt or restart your PC.
 pause
 exit /b 1
 
@@ -83,13 +80,13 @@ exit /b 1
 :: -------------------------------------------------------------
 :PYTHON_READY
 echo [+] Python detected:
-%PY_CMD% --version
+"%PY_CMD%" --version
 echo.
 
 if not exist ".venv\" (
-    echo [*] Creating virtual environment (.venv)...
-    %PY_CMD% -m venv .venv
-    if %ERRORLEVEL% neq 0 (
+    echo [*] Creating virtual environment...
+    "%PY_CMD%" -m venv .venv
+    if errorlevel 1 (
         echo [-] Failed to create virtual environment.
         pause
         exit /b 1
@@ -103,7 +100,7 @@ if not exist "%VENV_PYTHON%" (
     exit /b 1
 )
 
-echo [*] Checking and installing dependencies (PyQt6, requests)...
+echo [*] Checking and installing dependencies: PyQt6, requests...
 "%VENV_PYTHON%" -m pip install --upgrade pip --quiet
 "%VENV_PYTHON%" -m pip install PyQt6 requests --quiet
 
