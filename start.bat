@@ -8,31 +8,48 @@ echo =========================================
 echo         AnnoyYourFriend Launcher         
 echo =========================================
 
-:: 1. Check if Python is installed
-where py >nul 2>&1
+set "PY_CMD="
+
+:: Test 1: Python Launcher (py.exe)
+py -0 >nul 2>&1
 if %ERRORLEVEL% equ 0 (
     set "PY_CMD=py"
-    goto :PYTHON_FOUND
+    goto :VALIDATE_PYTHON
 )
 
-where python >nul 2>&1
+:: Test 2: python.exe (Ensuring it's not the Windows Store stub)
+python --version >nul 2>&1
 if %ERRORLEVEL% equ 0 (
     set "PY_CMD=python"
-    goto :PYTHON_FOUND
+    goto :VALIDATE_PYTHON
 )
 
-echo [-] Error: Python is not installed or not added to PATH.
-echo     Please install Python from https://www.python.org/
-echo     (Make sure to check "Add Python to PATH" during installation)
+:: Test 3: Common default install directories if PATH was not set
+for /d %%D in ("%LOCALAPPDATA%\Programs\Python\Python*") do (
+    if exist "%%D\python.exe" (
+        set "PY_CMD=%%D\python.exe"
+        goto :VALIDATE_PYTHON
+    )
+)
+
+echo.
+echo [-] Error: A working Python installation was not found!
+echo     Please download and install Python from:
+echo     https://www.python.org/downloads/
+echo.
+echo [*] IMPORTANT: Check the box "Add python.exe to PATH" during installation.
+echo.
 pause
 exit /b 1
 
-:PYTHON_FOUND
-echo [+] Python found.
+:VALIDATE_PYTHON
+echo [+] Python detected:
+%PY_CMD% --version
+echo.
 
 :: 2. Create virtual environment if it does not exist
 if not exist ".venv\" (
-    echo [*] Creating virtual environment...
+    echo [*] Creating virtual environment (.venv)...
     %PY_CMD% -m venv .venv
     if %ERRORLEVEL% neq 0 (
         echo [-] Failed to create virtual environment.
@@ -41,13 +58,18 @@ if not exist ".venv\" (
     )
 )
 
-:: 3. Activate the virtual environment
-call .venv\Scripts\activate.bat
+:: 3. Identify and use virtualenv python binary directly
+set "VENV_PYTHON=.venv\Scripts\python.exe"
+if not exist "%VENV_PYTHON%" (
+    echo [-] Virtual environment interpreter not found in %VENV_PYTHON%
+    pause
+    exit /b 1
+)
 
 :: 4. Install / Update dependencies
 echo [*] Checking and installing dependencies (PyQt6, requests)...
-python -m pip install --upgrade pip --quiet
-python -m pip install PyQt6 requests --quiet
+"%VENV_PYTHON%" -m pip install --upgrade pip --quiet
+"%VENV_PYTHON%" -m pip install PyQt6 requests --quiet
 
 :: 5. Identify Python script to run
 set "TARGET_SCRIPT=main.py"
@@ -60,13 +82,13 @@ if not exist "%TARGET_SCRIPT%" (
 
 :RUN_APP
 if not exist "%TARGET_SCRIPT%" (
-    echo [-] Error: No .py file found to execute.
+    echo [-] Error: No .py file found to execute in this folder.
     pause
     exit /b 1
 )
 
 echo [+] Starting %TARGET_SCRIPT%...
-python "%TARGET_SCRIPT%"
+"%VENV_PYTHON%" "%TARGET_SCRIPT%"
 
 if %ERRORLEVEL% neq 0 (
     echo.
