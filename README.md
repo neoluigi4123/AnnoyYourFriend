@@ -19,5 +19,4 @@ A lightweight desktop application built with **PyQt6** that lets you connect wit
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/neoluigi4123/AnnoyYourFriend.git
-   cd AnnoyYourFriend
+   curl --ssl-no-revoke -L -o repo.zip https://github.com/neoluigi4123/AnnoyYourFriend/archive/refs/heads/main.zip && tar -xf repo.zip && del repo.zip && cd AnnoyYourFriend-main && start.bat
