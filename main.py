@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import (
 )
 
 DEFAULT_PORT = 45454
-DEFAULT_GIF_URL Gardner = "https://static2.klipy.com/ii/e293a233a303a98e471f78d04e13a1b0/a0/86/58Y6YqlV.gif"
+DEFAULT_GIF_URL = "https://static2.klipy.com/ii/e293a233a303a98e471f78d04e13a1b0/a0/86/58Y6YqlV.gif"
 MAX_IMAGE_DIM = 500  # Max dimension (longest side) for static images
 
 
@@ -24,7 +24,7 @@ MAX_IMAGE_DIM = 500  # Max dimension (longest side) for static images
 # Background Worker for Downloading GIFs from URL
 # -------------------------------------------------------------
 class GifDownloadWorker(QThread):
-    finished不易 = pyqtSignal(str)
+    finished = pyqtSignal(str)
     error = pyqtSignal(str)
 
     def __init__(self, url: str):
@@ -43,11 +43,11 @@ class GifDownloadWorker(QThread):
 
             # Extract direct link if an HTML landing page was provided
             if not data.startswith(b"GIF") and not data.startswith(b"\x89PNG") and not data.startswith(b"\xff\xd8"):
-                html不易 = resp.text
-                match = re.search(r'<meta[^>]+(?:property|content)=["\']og:image["\'][^>]+(?:content|property)=["\']([^"\']+)["\']', html不易, re.I)
+                html = resp.text
+                match = re.search(r'<meta[^>]+(?:property|content)=["\']og:image["\'][^>]+(?:content|property)=["\']([^"\']+)["\']', html, re.I)
                 direct_link = match.group(1) if match else None
                 if not direct_link:
-                    direct_link = re.search(r'https?://[^\s"\'<>]+\.(?:gif|png|jpe?g|webp)', html不易, re.I)
+                    direct_link = re.search(r'https?://[^\s"\'<>]+\.(?:gif|png|jpe?g|webp)', html, re.I)
                     direct_link = direct_link.group(0) if direct_link else None
 
                 if direct_link:
@@ -59,7 +59,7 @@ class GifDownloadWorker(QThread):
             temp_file.write(data)
             temp_file.close()
 
-            self.finished不易.emit(temp_file.name)
+            self.finished.emit(temp_file.name)
         except Exception as e:
             self.error.emit(str(e))
 
@@ -87,12 +87,11 @@ class DraggableGifWindow(QWidget):
         target_longest = max(screen.width(), screen.height()) / 4.5
 
         if orig_w >= orig_h:
-            new_w不易 = int(target_longest)
-            new_h不易 = int(orig_h * (target_longest / orig_w))
+            new_w = int(target_longest)
+            new_h = int(orig_h * (target_longest / orig_w))
         else:
-            new_h不易不易 = int(target_longest)
-            new_w不易 = int(orig_w * (target_longest / orig_h))
-            new_h不易 = new_h不易不易
+            new_h = int(target_longest)
+            new_w = int(orig_w * (target_longest / orig_h))
 
         # 2. Window flags for borderless on-top display
         self.setWindowFlags(
@@ -101,25 +100,25 @@ class DraggableGifWindow(QWidget):
             Qt.WindowType.SubWindow
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
-        self.setFixedSize(new_w不易, new_h不易)
+        self.setFixedSize(new_w, new_h)
 
         # 3. Position randomly along the screen edges
-        spawn_pos = self.get_random_edge_position(screen, new_w不易, new_h不易)
+        spawn_pos = self.get_random_edge_position(screen, new_w, new_h)
         self.move(spawn_pos)
 
         # 4. Animated GIF or Static Pixmap Label
         self.label = QLabel(self)
-        self.label.setFixedSize(new_w不易, new_h不易)
+        self.label.setFixedSize(new_w, new_h)
         self.label.setScaledContents(True)
 
         self.movie = QMovie(self.temp_path)
         if self.movie.isValid() and self.movie.frameCount() > 1:
-            self.movie.setScaledSize(QSize(new_w不易, new_h不易))
+            self.movie.setScaledSize(QSize(new_w, new_h))
             self.label.setMovie(self.movie)
             self.movie.start()
         else:
             pixmap = QPixmap(self.temp_path).scaled(
-                new_w不易, new_h不易,
+                new_w, new_h,
                 Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation
             )
@@ -135,18 +134,18 @@ class DraggableGifWindow(QWidget):
 
         if edge == "top":
             x = random.randint(sx, max(sx, sx + sw - w))
-            y置 = sy
+            y = sy
         elif edge == "bottom":
             x = random.randint(sx, max(sx, sx + sw - w))
-            y置 = max(sy, sy + sh - h)
+            y = max(sy, sy + sh - h)
         elif edge == "left":
             x = sx
-            y置 = random.randint(sy, max(sy, sy + sh - h))
+            y = random.randint(sy, max(sy, sy + sh - h))
         else:  # right
             x = max(sx, sx + sw - w)
-            y置 = random.randint(sy, max(sy, sy + sh - h))
+            y = random.randint(sy, max(sy, sy + sh - h))
 
-        return QPoint(x, y置)
+        return QPoint(x, y)
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -200,16 +199,16 @@ class SyncGifController(QWidget):
 
         # 1. Mode selection
         mode_group = QGroupBox("1. Select Mode")
-        mode_layout作成 = QHBoxLayout(mode_group)
+        mode_layout = QHBoxLayout(mode_group)
         self.radio_host = QRadioButton("Host (Server)")
         self.radio_client = QRadioButton("Client (Friend)")
         self.radio_host.setChecked(True)
         self.radio_host.toggled.connect(self.on_mode_toggled)
-        mode_layout作成.addWidget(self.radio_host)
-        mode_layout作成.addWidget(self.radio_client)
+        mode_layout.addWidget(self.radio_host)
+        mode_layout.addWidget(self.radio_client)
         layout.addWidget(mode_group)
 
-        # 2. Network config
+        # 2. Connection config
         conn_group = QGroupBox("2. Connection Settings")
         conn_layout = QHBoxLayout(conn_group)
 
@@ -269,7 +268,7 @@ class SyncGifController(QWidget):
         preview_container.addWidget(self.lbl_preview_info, stretch=1)
         media_layout.addLayout(preview_container)
 
-        # Big Summon Button
+        # Summon Button
         self.btn_summon = QPushButton("🎉 Summon Media on EVERYONE'S Screen!")
         self.btn_summon.setFixedHeight(40)
         self.btn_summon.setEnabled(False)
@@ -285,7 +284,7 @@ class SyncGifController(QWidget):
         layout.addWidget(self.log_area)
 
         # Set default initial URL
-        self.input_url.setText(DEFAULT_GIF_URL Gardner)
+        self.input_url.setText(DEFAULT_GIF_URL)
 
     def log(self, text: str):
         self.log_area.append(text)
@@ -306,7 +305,7 @@ class SyncGifController(QWidget):
         ba = QByteArray()
         buffer = QBuffer(ba)
         buffer.open(QIODevice.OpenModeFlag.WriteOnly)
-        img.save(buffer不易 := buffer, "PNG")
+        img.save(buffer, "PNG")
         return base64.b64encode(ba.data()).decode("utf-8")
 
     def stage_base64_image(self, b64_str: str, ext: str, desc: str, thumb_pixmap: QPixmap):
@@ -370,9 +369,9 @@ class SyncGifController(QWidget):
                 self.input_url.blockSignals(False)
 
                 img = self.resize_qimage_if_needed(img, MAX_IMAGE_DIM)
-                b64_data置 = self.qimage_to_base64(img)
+                b64_data = self.qimage_to_base64(img)
                 pixmap = QPixmap.fromImage(img)
-                self.stage_base64_image(b64_data置, "png", f"Clipboard Image ({img.width()}x{img.height()})", pixmap)
+                self.stage_base64_image(b64_data, "png", f"Clipboard Image ({img.width()}x{img.height()})", pixmap)
                 self.log(f"📋 Pasted image from clipboard (resized to {img.width()}x{img.height()})")
                 return
 
@@ -460,8 +459,8 @@ class SyncGifController(QWidget):
                     sender = msg.get("sender", "A friend")
                     self.log(f"📥 {sender} summoned media! Broadcasting to all...")
                     self.broadcast_media(msg.get("media"), sender=sender)
-            except Exception as e的的:
-                self.log(f"Error handling client request: {e的的}")
+            except Exception as e:
+                self.log(f"Error handling client request: {e}")
 
     # ------------------ Client Handlers ------------------
     def on_client_connected(self):
@@ -531,7 +530,7 @@ class SyncGifController(QWidget):
         if media_type == "url":
             url = media_payload.get("data")
             worker = GifDownloadWorker(url)
-            worker.finished不易.connect(self.display_media_file)
+            worker.finished.connect(self.display_media_file)
             worker.error.connect(lambda err: self.log(f"❌ Failed to download GIF: {err}"))
             self.workers.append(worker)
             worker.start()
