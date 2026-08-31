@@ -1,4 +1,4 @@
-# 🤪 AnnoyYourFriend
+# 🤪 AnnoyYourFriend (using this fully vide-coded app becuz, we lazy buns)
 
 A lightweight desktop application built with **PyQt6** that lets you connect with friends over a network to remotely summon animated GIFs on each other's screens in real time.
 
