@@ -65,7 +65,7 @@ class GifDownloadWorker(QThread):
 
 
 # -------------------------------------------------------------
-# Edge-Spawning Draggable Media Window (GIF & Static Images)
+# Edge-Spawning Media Window (Non-intrusive Overlay)
 # -------------------------------------------------------------
 class DraggableGifWindow(QWidget):
     def __init__(self, file_path: str, duration_ms: int = 3500):
@@ -93,13 +93,14 @@ class DraggableGifWindow(QWidget):
             new_h = int(target_longest)
             new_w = int(orig_w * (target_longest / orig_h))
 
-        # 2. Window flags for borderless on-top display
+        # 2. Window flags for non-activating, borderless, on-top display
         self.setWindowFlags(
             Qt.WindowType.FramelessWindowHint |
             Qt.WindowType.WindowStaysOnTopHint |
-            Qt.WindowType.SubWindow
+            Qt.WindowType.WindowDoesNotAcceptFocus
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)
         self.setFixedSize(new_w, new_h)
 
         # 3. Position randomly along the screen edges
@@ -553,9 +554,9 @@ class SyncGifController(QWidget):
             popup = DraggableGifWindow(file_path, duration_ms=3500)
             self.active_popups.append(popup)
             popup.destroyed.connect(lambda: self.active_popups.remove(popup) if popup in self.active_popups else None)
+            
+            # Show without activating or stealing focus
             popup.show()
-            popup.raise_()
-            popup.activateWindow()
         except Exception as e:
             self.log(f"❌ Display error: {e}")
 
